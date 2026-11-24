@@ -11,5 +11,6 @@ public class AuthorConfigurations : IEntityTypeConfiguration<Author>
         builder.Property(a => a.Name)
             .IsRequired()
             .HasMaxLength(100);
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

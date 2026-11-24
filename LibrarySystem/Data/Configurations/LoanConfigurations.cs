@@ -15,5 +15,6 @@ public class LoanConfigurations : IEntityTypeConfiguration<Loan>
         builder.HasOne(l => l.Borrower)
             .WithMany(b => b.Loans)
             .HasForeignKey(l => l.BorrowerId);
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

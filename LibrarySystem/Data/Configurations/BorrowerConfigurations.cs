@@ -11,5 +11,6 @@ public class BorrowerConfigurations : IEntityTypeConfiguration<Borrower>
         builder.Property(b => b.Name)
             .IsRequired()
             .HasMaxLength(100);
+        builder.HasQueryFilter(x => !x.IsDeleted);
     }
 }

@@ -16,12 +16,15 @@ public class BookConfigurations : IEntityTypeConfiguration<Book>
             .IsRequired()
             .HasMaxLength(20);
 
+        // Unique only among non-deleted books, so a soft-deleted ISBN can be reused
         builder.HasIndex(b => b.ISBN)
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
-        // Many-to-One: Book -> Author
         builder.HasOne(b => b.Author)
             .WithMany(a => a.Books)
             .HasForeignKey(b => b.AuthorId);
+
+        builder.HasQueryFilter(b => !b.IsDeleted);
     }
 }

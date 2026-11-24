@@ -8,22 +8,25 @@ namespace LibrarySystem.Services;
 
 public class BorrowerService : IBorrowerService
 {
-    private readonly IGenericRepository<Borrower> _repository;
+    private readonly IBorrowerRepository _repository;
     private readonly IMapper _mapper;
     private readonly ILogger<BorrowerService> _logger;
 
-    public BorrowerService(IGenericRepository<Borrower> repository, IMapper mapper, ILogger<BorrowerService> logger)
+    public BorrowerService(IBorrowerRepository repository, IMapper mapper, ILogger<BorrowerService> logger)
     {
         _repository = repository;
         _mapper = mapper;
         _logger = logger;
     }
 
-    public async Task<GenericResult<IEnumerable<GetBorrowerResponse>>> GetAllAsync()
+    public async Task<GenericResult<PaginatedList<GetBorrowerResponse>>> GetBorrowersAsync(int pageNumber, int pageSize, string? searchTerm)
     {
-        var borrowers = await _repository.GetAllAsync();
-        var response = _mapper.Map<IEnumerable<GetBorrowerResponse>>(borrowers);
-        return GenericResult<IEnumerable<GetBorrowerResponse>>.Success(response);
+        var page = await _repository.GetBorrowersAsync(pageNumber, pageSize, searchTerm);
+
+        var items = _mapper.Map<List<GetBorrowerResponse>>(page.Data ?? Enumerable.Empty<Borrower>());
+        var response = PaginatedList<GetBorrowerResponse>.Create(items, page.PageNumber, page.PageSize, page.TotalRecords);
+
+        return GenericResult<PaginatedList<GetBorrowerResponse>>.Success(response);
     }
 
     public async Task<GenericResult<GetBorrowerResponse>> GetByIdAsync(int id)

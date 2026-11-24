@@ -19,9 +19,12 @@ public class BorrowersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetBorrowers(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchTerm = null)
     {
-        var result = await _borrowerService.GetAllAsync();
+        var result = await _borrowerService.GetBorrowersAsync(pageNumber, pageSize, searchTerm);
         return Ok(result.Value);
     }
 

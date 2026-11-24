@@ -1,17 +1,19 @@
-﻿using LibrarySystem.Data;
-using Microsoft.EntityFrameworkCore;
-using LibrarySystem.Repositories;
-using LibrarySystem.Helper;
-using AutoMapper;
+﻿using AutoMapper;
+using LibrarySystem.Data;
+using LibrarySystem.Data.Interceptors;
 using LibrarySystem.Filters;
+using LibrarySystem.Helper;
+using LibrarySystem.Repositories;
 using LibrarySystem.Services;
+using Microsoft.EntityFrameworkCore;
+
 namespace LibrarySystem.Extensions;
 
 public static class ApplicationServiceExtension
 {
     public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
     {
-        #region Swagger
+        // Swagger
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
@@ -20,19 +22,15 @@ public static class ApplicationServiceExtension
             if (File.Exists(xmlPath))
                 options.IncludeXmlComments(xmlPath);
         });
-        #endregion
 
-        #region DbContext
+        // DbContext + Interceptors
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultSqlConnection")));
-        #endregion
+        {
+            options.UseSqlServer(configuration.GetConnectionString("DefaultSqlConnection"));
+            options.AddInterceptors(new SoftDeleteInterceptor(), new CreatedAtInterceptor(), new ModifiedAtInterceptor());
+        });
 
-        #region Repositories
-        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-        services.AddScoped<IBookRepository, BookRepository>();
-        #endregion
-
-        // Register AutoMapper in the IoC container
+        // AutoMapper
         services.AddSingleton<IMapper>(_ =>
         {
             var config = new MapperConfiguration(cfg =>
@@ -45,10 +43,20 @@ public static class ApplicationServiceExtension
             return config.CreateMapper();
         });
 
+        // Repositories
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<IBookRepository, BookRepository>();
+        services.AddScoped<IAuthorRepository, AuthorRepository>();
+        services.AddScoped<IBorrowerRepository, BorrowerRepository>();
+
+        // Services
         services.AddScoped<IBookService, BookService>();
-        services.AddScoped<ActionExecutionLoggingFilter>();
         services.AddScoped<IAuthorService, AuthorService>();
         services.AddScoped<IBorrowerService, BorrowerService>();
+
+        // Filters
+        services.AddScoped<ActionExecutionLoggingFilter>();
+
         return services;
     }
 }

@@ -8,22 +8,25 @@ namespace LibrarySystem.Services;
 
 public class AuthorService : IAuthorService
 {
-    private readonly IGenericRepository<Author> _repository;
+    private readonly IAuthorRepository _repository;
     private readonly IMapper _mapper;
     private readonly ILogger<AuthorService> _logger;
 
-    public AuthorService(IGenericRepository<Author> repository, IMapper mapper, ILogger<AuthorService> logger)
+    public AuthorService(IAuthorRepository repository, IMapper mapper, ILogger<AuthorService> logger)
     {
         _repository = repository;
         _mapper = mapper;
         _logger = logger;
     }
 
-    public async Task<GenericResult<IEnumerable<GetAuthorResponse>>> GetAllAsync()
+    public async Task<GenericResult<PaginatedList<GetAuthorResponse>>> GetAuthorsAsync(int pageNumber, int pageSize, string? searchTerm)
     {
-        var authors = await _repository.GetAllAsync();
-        var response = _mapper.Map<IEnumerable<GetAuthorResponse>>(authors);
-        return GenericResult<IEnumerable<GetAuthorResponse>>.Success(response);
+        var page = await _repository.GetAuthorsAsync(pageNumber, pageSize, searchTerm);
+
+        var items = _mapper.Map<List<GetAuthorResponse>>(page.Data ?? Enumerable.Empty<Author>());
+        var response = PaginatedList<GetAuthorResponse>.Create(items, page.PageNumber, page.PageSize, page.TotalRecords);
+
+        return GenericResult<PaginatedList<GetAuthorResponse>>.Success(response);
     }
 
     public async Task<GenericResult<GetAuthorResponse>> GetByIdAsync(int id)

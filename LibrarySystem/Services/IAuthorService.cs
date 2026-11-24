@@ -5,7 +5,7 @@ namespace LibrarySystem.Services;
 
 public interface IAuthorService
 {
-    Task<GenericResult<IEnumerable<GetAuthorResponse>>> GetAllAsync();
+    Task<GenericResult<PaginatedList<GetAuthorResponse>>> GetAuthorsAsync(int pageNumber, int pageSize, string? searchTerm);
     Task<GenericResult<GetAuthorResponse>> GetByIdAsync(int id);
     Task<GenericResult<GetAuthorResponse>> CreateAsync(CreateAuthorRequest request);
     Task<Result> UpdateAsync(UpdateAuthorRequest request);
