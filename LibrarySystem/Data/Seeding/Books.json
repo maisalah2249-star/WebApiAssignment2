@@ -1,0 +1,22 @@
+[
+  {
+    "Title": "Palace Walk",
+    "ISBN": "978-0385264662",
+    "AuthorId": 1
+  },
+  {
+    "Title": "Sugar Street",
+    "ISBN": "978-0385264686",
+    "AuthorId": 1
+  },
+  {
+    "Title": "The Days",
+    "ISBN": "978-9774247873",
+    "AuthorId": 2
+  },
+  {
+    "Title": "Utopia",
+    "ISBN": "978-9770929490",
+    "AuthorId": 3
+  }
+]
