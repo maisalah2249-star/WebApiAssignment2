@@ -8,6 +8,7 @@ namespace LibrarySystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[ServiceFilter(typeof(ExceptionHandlingFilter))]
 [ServiceFilter(typeof(ActionExecutionLoggingFilter))]
 public class BooksController : ControllerBase
 {
@@ -22,6 +23,7 @@ public class BooksController : ControllerBase
     /// Gets books with searching, filtration, sorting and pagination.
     /// </summary>
     [HttpGet]
+    [ServiceFilter(typeof(ActionTimingFilter))]
     public async Task<ActionResult<PaginatedList<GetBookResponse>>> GetBooks([FromQuery] BookQueryParams queryParams)
     {
         var result = await _bookService.GetBooksAsync(queryParams);
@@ -29,11 +31,17 @@ public class BooksController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ServiceFilter(typeof(ActionTimingFilter))]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _bookService.GetByIdAsync(id);
         return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
     }
+
+    // Demo endpoint to prove ExceptionHandlingFilter works
+    [HttpGet("test-error")]
+    public IActionResult TestError()
+        => throw new InvalidOperationException("Test exception to demonstrate the exception filter.");
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateBookRequest request)

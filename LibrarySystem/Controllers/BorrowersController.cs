@@ -8,6 +8,7 @@ namespace LibrarySystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[ServiceFilter(typeof(ExceptionHandlingFilter))]
 [ServiceFilter(typeof(ActionExecutionLoggingFilter))]
 public class BorrowersController : ControllerBase
 {
@@ -29,6 +30,7 @@ public class BorrowersController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ServiceFilter(typeof(ActionTimingFilter))]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _borrowerService.GetByIdAsync(id);

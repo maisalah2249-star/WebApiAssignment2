@@ -3,6 +3,7 @@ using LibrarySystem.Data;
 using LibrarySystem.Data.Interceptors;
 using LibrarySystem.Filters;
 using LibrarySystem.Helper;
+using LibrarySystem.Middlewares;
 using LibrarySystem.Repositories;
 using LibrarySystem.Services;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,8 @@ namespace LibrarySystem.Extensions;
 
 public static class ApplicationServiceExtension
 {
+    public const string CorsPolicyName = "ConfigurationOrigins";
+
     public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Swagger
@@ -54,8 +57,28 @@ public static class ApplicationServiceExtension
         services.AddScoped<IAuthorService, AuthorService>();
         services.AddScoped<IBorrowerService, BorrowerService>();
 
-        // Filters
+        // Middlewares: IMiddleware-based ones must be registered in the container
+        services.AddTransient<RequestIdHeaderMiddleware>();
+
+        // Action filters (used through [ServiceFilter])
         services.AddScoped<ActionExecutionLoggingFilter>();
+        services.AddScoped<ActionTimingFilter>();
+        services.AddScoped<ExceptionHandlingFilter>();
+
+        // CORS: only explicitly configured origins get browser access
+        var corsOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
+        services.AddCors(options =>
+            options.AddPolicy(CorsPolicyName, policy =>
+            {
+                if (corsOrigins.Length > 0)
+                {
+                    policy.WithOrigins(corsOrigins);
+                }
+
+                // Credentials stay disabled
+                policy.AllowAnyHeader().AllowAnyMethod();
+            }));
 
         return services;
     }

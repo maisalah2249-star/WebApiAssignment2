@@ -1,5 +1,6 @@
 using LibrarySystem.Data;
 using LibrarySystem.Extensions;
+using LibrarySystem.Middlewares;
 using Microsoft.EntityFrameworkCore;
 
 namespace LibrarySystem;
@@ -15,7 +16,7 @@ public class Program
 
         var app = builder.Build();
 
-        #region Automatic Migration
+        // Automatic migration + seeding
         using (var scope = app.Services.CreateScope())
         {
             var services = scope.ServiceProvider;
@@ -33,16 +34,31 @@ public class Program
                 logger.LogError(ex, ex.Message);
             }
         }
-        #endregion
+
+        // Middlewares: the order matters
+        app.UseMiddleware<ExceptionHandlingMiddleware>();   // 1) outermost: catches everything below it
+        app.UseMiddleware<RequestTimingMiddleware>();       // 2) measures the whole request
+        app.UseMiddleware<RequestIdHeaderMiddleware>();     // 3) adds X-Request-Id
+        app.UseMiddleware<RateLimitingMiddleware>();        // 4) limits /api calls
 
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+
+            // Demo endpoint (outside MVC) to prove ExceptionHandlingMiddleware works
+            app.MapGet("/debug/error", () =>
+            {
+                throw new InvalidOperationException("Test exception to demonstrate the exception middleware.");
+            });
         }
 
         app.UseHttpsRedirection();
+
+        app.UseCors(ApplicationServiceExtension.CorsPolicyName);
+
         app.UseAuthorization();
+
         app.MapControllers();
 
         app.Run();
