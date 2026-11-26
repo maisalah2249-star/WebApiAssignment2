@@ -2,12 +2,14 @@
 using LibrarySystem.Filters;
 using LibrarySystem.Results;
 using LibrarySystem.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.Authorization;
 namespace LibrarySystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 [ServiceFilter(typeof(ExceptionHandlingFilter))]
 [ServiceFilter(typeof(ActionExecutionLoggingFilter))]
 public class BooksController : ControllerBase
@@ -20,9 +22,10 @@ public class BooksController : ControllerBase
     }
 
     /// <summary>
-    /// Gets books with searching, filtration, sorting and pagination.
+    /// Gets books with searching, filtration, sorting and pagination. Public endpoint.
     /// </summary>
     [HttpGet]
+    [AllowAnonymous]
     [ServiceFilter(typeof(ActionTimingFilter))]
     public async Task<ActionResult<PaginatedList<GetBookResponse>>> GetBooks([FromQuery] BookQueryParams queryParams)
     {
@@ -31,6 +34,7 @@ public class BooksController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [AllowAnonymous]
     [ServiceFilter(typeof(ActionTimingFilter))]
     public async Task<IActionResult> GetById(int id)
     {
@@ -40,6 +44,7 @@ public class BooksController : ControllerBase
 
     // Demo endpoint to prove ExceptionHandlingFilter works
     [HttpGet("test-error")]
+    [AllowAnonymous]
     public IActionResult TestError()
         => throw new InvalidOperationException("Test exception to demonstrate the exception filter.");
 

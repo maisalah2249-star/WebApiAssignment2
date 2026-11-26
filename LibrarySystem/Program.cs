@@ -27,6 +27,9 @@ public class Program
                 var dbContext = services.GetRequiredService<ApplicationDbContext>();
                 await dbContext.Database.MigrateAsync();
                 await LibraryContextSeeding.SeedAsync(dbContext);
+
+                var authDbContext = services.GetRequiredService<AuthenticationDbContext>();
+                await authDbContext.Database.MigrateAsync();
             }
             catch (Exception ex)
             {
@@ -36,10 +39,10 @@ public class Program
         }
 
         // Middlewares: the order matters
-        app.UseMiddleware<ExceptionHandlingMiddleware>();   // 1) outermost: catches everything below it
-        app.UseMiddleware<RequestTimingMiddleware>();       // 2) measures the whole request
-        app.UseMiddleware<RequestIdHeaderMiddleware>();     // 3) adds X-Request-Id
-        app.UseMiddleware<RateLimitingMiddleware>();        // 4) limits /api calls
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseMiddleware<RequestTimingMiddleware>();
+        app.UseMiddleware<RequestIdHeaderMiddleware>();
+        app.UseMiddleware<RateLimitingMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {
@@ -47,7 +50,7 @@ public class Program
             app.UseSwaggerUI();
 
             // Demo endpoint (outside MVC) to prove ExceptionHandlingMiddleware works
-            app.MapGet("/debug/error", () =>
+            app.MapGet("/debug/error", (HttpContext _) =>
             {
                 throw new InvalidOperationException("Test exception to demonstrate the exception middleware.");
             });
@@ -57,7 +60,8 @@ public class Program
 
         app.UseCors(ApplicationServiceExtension.CorsPolicyName);
 
-        app.UseAuthorization();
+        app.UseAuthentication();   // who are you?  (must come before UseAuthorization)
+        app.UseAuthorization();    // are you allowed?
 
         app.MapControllers();
 

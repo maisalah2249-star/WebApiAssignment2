@@ -3,11 +3,13 @@ using LibrarySystem.Filters;
 using LibrarySystem.Results;
 using LibrarySystem.Services;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.Authorization;
 namespace LibrarySystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
+[ServiceFilter(typeof(ExceptionHandlingFilter))]
 [ServiceFilter(typeof(ActionExecutionLoggingFilter))]
 public class AuthorsController : ControllerBase
 {

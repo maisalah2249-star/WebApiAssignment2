@@ -1,12 +1,18 @@
-﻿using AutoMapper;
+﻿using System.Text;
+using AutoMapper;
 using LibrarySystem.Data;
 using LibrarySystem.Data.Interceptors;
+using LibrarySystem.Entities;
 using LibrarySystem.Filters;
 using LibrarySystem.Helper;
 using LibrarySystem.Middlewares;
 using LibrarySystem.Repositories;
 using LibrarySystem.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 namespace LibrarySystem.Extensions;
 
@@ -16,7 +22,7 @@ public static class ApplicationServiceExtension
 
     public static IServiceCollection AddServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Swagger
+        // Swagger (with JWT Bearer support)
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
@@ -24,6 +30,19 @@ public static class ApplicationServiceExtension
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             if (File.Exists(xmlPath))
                 options.IncludeXmlComments(xmlPath);
+
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "Paste the JWT token only (without the 'Bearer ' prefix)."
+            });
+
+            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+            });
         });
 
         // DbContext + Interceptors
@@ -79,6 +98,37 @@ public static class ApplicationServiceExtension
                 // Credentials stay disabled
                 policy.AllowAnyHeader().AllowAnyMethod();
             }));
+
+        // Authentication (Identity + JWT)
+        services.AddDbContext<AuthenticationDbContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("AuthenticationConnection")));
+
+        services.AddIdentity<ApplicationUser, IdentityRole>()
+            .AddEntityFrameworkStores<AuthenticationDbContext>()
+            .AddDefaultTokenProviders();
+
+        services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+
+                ValidIssuer = configuration["Jwt:Issuer"],
+                ValidAudience = configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!))
+            };
+        });
+
+        services.AddScoped<IJwtService, JwtService>();
 
         return services;
     }
